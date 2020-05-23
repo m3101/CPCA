@@ -2,8 +2,9 @@
 #include "linal.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 /*
-A simple collection of linear algebra functions
+A simple collection of naïve linear algebra functions
 Copyright (c) 2020 Amélia O. F. da S.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +62,12 @@ void scaleLine(matrix** mat,unsigned long int n,double s)
     h=(*mat)->w*n;
     for(unsigned long int i=0;i<(*mat)->w;i++)(*mat)->data[i+h]*=s;
 }
+void scaleCol(matrix** mat,unsigned long int n,double s)
+{
+    if(!mat||!*mat||n>=(*mat)->w)return;
+    for(unsigned long int i=0;i<(*mat)->h;i++)
+        (*mat)->data[n+(i*(*mat)->w)]*=s;
+}
 
 /*
 Swaps two of a matrix's lines for each other
@@ -104,6 +111,17 @@ void sumSLines(matrix** mat,unsigned long int n, unsigned long int m,double s)
     h2=(*mat)->w*n;
     for(unsigned long int i=0;i<(*mat)->w;i++)
         (*mat)->data[i+h2]+=(*mat)->data[i+h1]*s;
+}
+
+void sumSCols(matrix** mat,unsigned long int n, unsigned long int m,double s)
+{
+    unsigned long int h1;
+    if(s==0||!mat||!*mat||m>=(*mat)->w||n>=(*mat)->w)return;
+    for(unsigned long int i=0;i<(*mat)->h;i++)
+    {
+        h1=i*(*mat)->w;
+        (*mat)->data[n+h1]+=(*mat)->data[m+h1]*s;
+    }
 }
 /*
 Returns a transposed matrix (across the main diagonal)
@@ -212,4 +230,46 @@ void printmat(matrix* mat)
             printf("%.2lf\t",mat->data[ly+x]);
         printf("\n");
     }
+}
+
+double scalProd(matrix* mat,unsigned long int c1,unsigned long int c2)
+{
+    unsigned long int y,jump;
+    double ret=0;
+    if(!mat)return 0;
+    for(y=0;y<mat->h;y++)
+    {
+        jump=y*mat->w;
+        ret+=mat->data[jump+c1]*mat->data[jump+c2];
+    }
+    return ret;
+}
+
+void gram_schmidt_columns(matrix* mat)
+{
+    if(!mat)return;
+    unsigned long int x,x1;
+    double s;
+    for(x=0;x<mat->w;x++)
+    {
+        for(x1=0;x1<x;x1++)
+        {
+            s=scalProd(mat,x,x1)/scalProd(mat,x1,x1);
+            sumSCols(&mat,x,x1,-s);
+        }
+        scaleCol(&mat,x,1/sqrt(scalProd(mat,x,x)));
+    }
+}
+
+qr_decomp* qr_decompose(matrix* mat)
+{
+    if(!mat)return NULL;
+    qr_decomp* ret=malloc(sizeof(qr_decomp));
+    matrix* trans;
+    ret->Q=Matrix(mat->w,mat->h,mat->data);
+    gram_schmidt_columns(ret->Q);
+    trans=transposed(ret->Q);
+    ret->R=multiply(trans,mat);
+    freeMatrix(&trans);
+    return ret;
 }

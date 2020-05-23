@@ -13,10 +13,13 @@ lib:
 		cd ..;\
 		rm -rf bmpreader
 tests:
+	@make lib
 	@if [ -d build ]; then rm -rf build;fi
 	@mkdir build
 	gcc -L./lib/ src/cpca.c src/linal.c test/gauss.c test/gfx.c -lX11 -lm -lbmpreader -o build/gauss -Wall -Werror -g
+	gcc -L./lib/ src/cpca.c src/linal.c test/singval.c test/gfx.c -lX11 -lm -lbmpreader -o build/svd -Wall -Werror -g
 builds:
+	@make lib
 	@if [ -d build ]; then rm -rf build;fi
 	@mkdir build
 	gcc -o build/cpca.o -c src/cpca.c -Wall -Werror -fpic

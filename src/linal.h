@@ -1,3 +1,5 @@
+#ifndef LINAL_H
+#define LINAL_H
 /*
 A simple collection of linear algebra functions
 Copyright (c) 2020 Amélia O. F. da S.
@@ -51,6 +53,11 @@ Sums a matrix's <m>th line's entries to its <n>th's
 void sumLines(matrix** mat,unsigned long int n, unsigned long int m);
 
 /*
+Sums a matrix's <m>th column's entries times <s> to its <n>th's
+*/
+void sumSCols(matrix** mat,unsigned long int n, unsigned long int m,double s);
+
+/*
 Sums a matrix's <m>th line's entries times <s> to its <n>th's
 */
 void sumSLines(matrix** mat,unsigned long int n, unsigned long int m,double s);
@@ -58,7 +65,7 @@ void sumSLines(matrix** mat,unsigned long int n, unsigned long int m,double s);
 /*
 Transposes a matrix across its main diagonal
 */
-void transpose(matrix** mat);
+matrix* transposed(matrix* mat);
 
 /*
 Multiplies two matrices
@@ -80,3 +87,22 @@ void row_gaussElim(matrix ** mat);
 Prints a matrix
 */
 void printmat(matrix* mat);
+
+/*
+A structure for storing QR-decompositions
+*/
+typedef struct qr_decomp{
+    matrix* Q;
+    matrix* R;
+}qr_decomp;
+
+/*
+Applies the gram-schmidt process to the columns of a matrix
+*/
+void gram_schmidt_columns(matrix* mat);
+
+/*
+Performs qr-decomposition on a matrix
+*/
+qr_decomp* qr_decompose(matrix* mat);
+#endif

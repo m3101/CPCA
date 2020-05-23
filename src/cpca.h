@@ -1,5 +1,8 @@
+#ifndef CPCA_H
+#define CPCA_H
+#include "linal.h"
 /*
-A PCA implementation for BMP images
+A naïve SVD implementation for PCA in BMP images
 Copyright (c) 2020 Amélia O. F. da S.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -17,3 +20,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+/*
+Eigenpair structure
+*/
+typedef struct eigenpairs{
+    matrix* eigenvectors;
+    double* eigenvalues;
+}eigenpairs;
+
+/*
+Returns 1 for triangular matrices
+*/
+char istriangular(matrix* mat);
+
+/*
+Performs a naïve QR algorithm and returns the eigenpairs for a given square matrix
+*/
+eigenpairs* qr_eigenpairs_square(matrix* mat);
+
+typedef struct SVD{
+    matrix* U;
+    matrix* S;
+    matrix* VT;
+}SVD;
+
+/*
+Performs a naïve SVD
+*/
+SVD* qr_svd(matrix* mat);
+#endif
