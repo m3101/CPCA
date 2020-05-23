@@ -42,6 +42,15 @@ matrix* Matrix(unsigned long int w, unsigned long int h, double* data)
 }
 
 /*
+Allocates a new matrix using data from a char array (takes only 1 channel).
+*/
+matrix* Matrix_From_Img(unsigned long int w, unsigned long int h, char* data,char channel)
+{
+    /*TODO*/
+    return NULL;
+}
+
+/*
 Frees a matrix's allocated memory
 */
 void freeMatrix(matrix** m)
@@ -84,6 +93,23 @@ void swapLine(matrix** mat,unsigned long int n,unsigned long int m)
         tmp=(*mat)->data[i+h1];
         (*mat)->data[i+h1]=(*mat)->data[i+h2];
         (*mat)->data[i+h2]=tmp;
+    }
+}
+
+/*
+Swaps two of a matrix's columns for one another
+*/
+void swapCol(matrix** mat,unsigned long int n,unsigned long int m)
+{
+    double tmp;
+    unsigned long int h1;
+    if(!mat||!*mat||m>=(*mat)->w||n>=(*mat)->w)return;
+    for(unsigned long int i=0;i<(*mat)->h;i++)
+    {
+        h1=(*mat)->w*i;
+        tmp=(*mat)->data[h1+n];
+        (*mat)->data[h1+n]=(*mat)->data[h1+m];
+        (*mat)->data[h1+m]=tmp;
     }
 }
 
@@ -140,6 +166,23 @@ matrix* transposed(matrix* mat)
     return ret;
 }
 
+/*
+Returns a transposed matrix (across the main diagonal) ignoring elements after the <n>th column
+*/
+matrix* transposed_cut(matrix* mat,unsigned long int n)
+{
+    if(!mat)return NULL;
+    matrix* ret=Matrix(mat->h,n,NULL);
+    unsigned long int x,y,ly;
+    for(y=0;y<mat->h;y++)
+    {
+        ly=y*mat->w;
+        for(x=0;x<n;x++)
+            ret->data[(x*mat->h)+y]=mat->data[ly+x];
+    }
+    return ret;
+}
+
 /*Returns the index of the first non-zero element on a line*/
 unsigned long int pivot(double* line,unsigned int w)
 {
@@ -170,6 +213,45 @@ matrix* multiply(matrix* a,matrix* b)
         }
     }
     return ret;
+}
+
+/*
+Multiplies matrix <a> by <b>'s <v>th column
+*/
+matrix* multiplyByVect(matrix* a,matrix* b,unsigned long int v)
+{
+    if(a->w!=b->h)return NULL;
+    matrix* ret=Matrix(1,a->h,NULL);
+    unsigned long int y,i,lya,lyb;
+    for(y=0;y<a->h;y++)
+    {
+        lya=y*a->w;
+        for(i=0;i<a->w;i++)
+        {
+            lyb=i*b->w;
+            ret->data[y]+=a->data[lya+i]*b->data[lyb+v];
+        }
+    }
+    return ret;
+}
+
+/*
+Multiplies matrix <a> by <b>'s <v>th column and places the result in <dest>'s <vi>th column
+*/
+void multiplyByVectToVect(matrix* a,matrix* b,matrix* dest,unsigned long int v,unsigned long int vi)
+{
+    if(a->w!=b->h||dest->h!=a->h||vi>=dest->w)return;
+    unsigned long int y,i,lya,lyb,lyd;
+    for(y=0;y<a->h;y++)
+    {
+        lya=y*a->w;
+        lyd=y*dest->w;
+        for(i=0;i<a->w;i++)
+        {
+            lyb=i*b->w;
+            dest->data[lyd+vi]+=a->data[lya+i]*b->data[lyb+v];
+        }
+    }
 }
 
 int sortMat_compar(const void* _a,const void* _b,void* arg)
@@ -227,7 +309,7 @@ void printmat(matrix* mat)
     {
         ly=mat->w*y;
         for(x=0;x<mat->w;x++)
-            printf("%.2lf\t",mat->data[ly+x]);
+            printf("%.4lf\t",mat->data[ly+x]);
         printf("\n");
     }
 }
@@ -248,16 +330,37 @@ double scalProd(matrix* mat,unsigned long int c1,unsigned long int c2)
 void gram_schmidt_columns(matrix* mat)
 {
     if(!mat)return;
-    unsigned long int x,x1;
+    unsigned long int x,x1,r,i;
     double s;
     for(x=0;x<mat->w;x++)
     {
+        i=0;
+        s=scalProd(mat,x,x);
+        while(s<=ZERO)
+        {
+            r=(mat->w-x)-i;
+            if(r==0)return;
+            for(x1=x;x1<mat->w-1;x1++)
+                swapCol(&mat,x1,x1+1);
+            i++;
+            s=scalProd(mat,x,x);
+        }
         for(x1=0;x1<x;x1++)
         {
-            s=scalProd(mat,x,x1)/scalProd(mat,x1,x1);
+            s=scalProd(mat,x1,x1);
+            if(s==0) continue;
+            else s=scalProd(mat,x,x1)/s;
             sumSCols(&mat,x,x1,-s);
         }
-        scaleCol(&mat,x,1/sqrt(scalProd(mat,x,x)));
+        s=sqrt(scalProd(mat,x,x));
+        if(s<=ZERO&&x<mat->w-1)
+        {
+            for(x1=x;x1<mat->w-1;x1++)
+                swapCol(&mat,x1,x1+1);
+            x--;
+        }
+        else
+            scaleCol(&mat,x,1/s);
     }
 }
 

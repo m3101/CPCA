@@ -1,5 +1,6 @@
 #ifndef LINAL_H
 #define LINAL_H
+#define ZERO 0.00000000000001
 /*
 A simple collection of linear algebra functions
 Copyright (c) 2020 Amélia O. F. da S.
@@ -33,6 +34,11 @@ Allocates a new matrix. If data!=NULL, also copies data from <data> to matrix.da
 matrix* Matrix(unsigned long int w, unsigned long int h, double* data);
 
 /*
+Allocates a new matrix using data from a char array (takes only 1 channel).
+*/
+matrix* Matrix_From_Img(unsigned long int w, unsigned long int h, char* data,char channel);
+
+/*
 Frees a matrix's allocated memory
 */
 void freeMatrix(matrix** m);
@@ -43,9 +49,19 @@ Scales a matrix's <n>th line by a factor of <s>
 void scaleLine(matrix** mat,unsigned long int n,double s);
 
 /*
+Scales a matrix's <n>th column by a factor of <s>
+*/
+void scaleCol(matrix** mat,unsigned long int n,double s);
+
+/*
 Swaps two of a matrix's lines for each other
 */
 void swapLine(matrix** mat,unsigned long int n,unsigned long int m);
+
+/*
+Swaps two of a matrix's columns for one another
+*/
+void swapCol(matrix** mat,unsigned long int n,unsigned long int m);
 
 /*
 Sums a matrix's <m>th line's entries to its <n>th's
@@ -68,9 +84,24 @@ Transposes a matrix across its main diagonal
 matrix* transposed(matrix* mat);
 
 /*
+Returns a transposed matrix (across the main diagonal) ignoring elements after the <n>th column
+*/
+matrix* transposed_cut(matrix* mat,unsigned long int n);
+
+/*
 Multiplies two matrices
 */
 matrix* multiply(matrix* a,matrix* b);
+
+/*
+Multiplies matrix <a> by <b>'s <v>th column
+*/
+matrix* multiplyByVect(matrix* a,matrix* b,unsigned long int v);
+
+/*
+Multiplies matrix <a> by <b>'s <v>th column and places the result in <dest>'s <vi>th column
+*/
+void multiplyByVectToVect(matrix* a,matrix* b,matrix* dest,unsigned long int v,unsigned long int vi);
 
 /*
 Sorts a matrix's lines so that the rightmost pivots are at the bottom

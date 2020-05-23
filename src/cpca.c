@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
 #include "linal.h"
 #include "cpca.h"
@@ -33,7 +34,7 @@ char istriangular(matrix* mat)
     {
         h=mat->w*y;
         for(x=0;x<y;x++)
-            if(mat->data[h+x]*mat->data[h+x]>0.0000000000001)return 0;
+            if(mat->data[h+x]*mat->data[h+x]>ZERO)return 0;
     }
     return 1;
 }
@@ -47,6 +48,11 @@ eigenpairs* qr_eigenpairs_square(matrix* mat)
     eigenpairs* ret=malloc(sizeof(eigenpairs));
     ret->eigenvalues=malloc(sizeof(double)*mat->w);
     qr_decomp* QR=qr_decompose(mat);
+    printf("IN QR:\n");
+    printf("Q:\n");
+    printmat(QR->Q);
+    printf("R:\n");
+    printmat(QR->R);
     matrix* RQ=multiply(QR->R,QR->Q);
     matrix* Q=Matrix(QR->Q->w,QR->Q->h,QR->Q->data),*tmp;
     unsigned long int i;
@@ -68,6 +74,7 @@ eigenpairs* qr_eigenpairs_square(matrix* mat)
     freeMatrix(&QR->Q);
     free(QR);
     freeMatrix(&RQ);
+    printf("RETURNING FROM QR\n");
     return ret;
 }
 
@@ -87,16 +94,34 @@ SVD* qr_svd(matrix* mat)
     if(!mat)return NULL;
     printf("IN SVD\n");
     ret=malloc(sizeof(SVD));
+    unsigned long int non_null,i;
     matrix *trans=transposed(mat),*sq=multiply(trans,mat);
-    eigenpairs* eigen=qr_eigenpairs_square(sq);
-    ret->U=transposed(eigen->eigenvectors);
-    ret->S=square_from_vect(eigen->eigenvalues,sq->w);
     printf("MtM:\n");
     printmat(sq);
+    eigenpairs* eigen=qr_eigenpairs_square(sq);
+    non_null=0;
+    for(non_null=0;non_null<sq->w;non_null++)if(eigen->eigenvalues[non_null]<=ZERO)break;
+    printf("Eigenvectors (%lu):\n",non_null);
+    printmat(eigen->eigenvectors);
+    ret->VT=transposed_cut(eigen->eigenvectors,non_null);
+    ret->U=Matrix(non_null,mat->h,NULL);
+    /*For each eigenvalue*/
+    for(i=0;i<non_null;i++)
+    {
+        eigen->eigenvalues[i]=sqrt(eigen->eigenvalues[i]);
+        if(eigen->eigenvalues[i]>ZERO)
+        {
+            multiplyByVectToVect(mat,eigen->eigenvectors,ret->U,i,i);
+            scaleCol(&ret->U,i,1/eigen->eigenvalues[i]);
+        }
+    }
+    ret->S=square_from_vect(eigen->eigenvalues,non_null);
     printf("U:\n");
     printmat(ret->U);
     printf("S:\n");
     printmat(ret->S);
+    printf("Vt:\n");
+    printmat(ret->VT);
     printf("RETURNING FROM SVD\n");
     return ret;
 }

@@ -6,7 +6,7 @@
 
 int main()
 {
-    /*double mm[]=
+    double mm[]=
     {
         1,1,1,0,0,
         3,3,3,0,0,
@@ -16,18 +16,21 @@ int main()
         0,0,0,5,5,
         0,1,0,2,2
     };
-    matrix* mat=Matrix(5,7,mm),*prod;
-    */
-    double mm[]=
+    matrix* mat=Matrix(5,7,mm),*tmp,*prod;
+    
+    /*double mm[]=
     {
         1,1,
         0,1,
         1,0
     };
-    matrix* mat=Matrix(2,3,mm);
+    matrix* mat=Matrix(2,3,mm),*tmp,*prod;*/
     printf("###\n");
     printmat(mat);
     SVD* svd=qr_svd(mat);
-    printmat(svd->VT);
+    tmp=multiply(svd->U,svd->S);
+    prod=multiply(tmp,svd->VT);
+    freeMatrix(&tmp);
+    printmat(prod);
     return 0;
 }
