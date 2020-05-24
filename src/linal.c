@@ -46,8 +46,17 @@ Allocates a new matrix using data from a char array (takes only 1 channel).
 */
 matrix* Matrix_From_Img(unsigned long int w, unsigned long int h, char* data,char channel)
 {
-    /*TODO*/
-    return NULL;
+    if(w==0||h==0)return NULL;
+    matrix* ret=malloc(sizeof(matrix));
+    unsigned long int len=w*h;
+    ret->w=w;
+    ret->h=h;
+    ret->data=calloc(w*h,sizeof(double));
+    if(data)
+    {
+        for(unsigned long int i=0;i<len;i++) ret->data[i]=(unsigned char)data[(i*4)+channel];
+    }
+    return ret;
 }
 
 /*

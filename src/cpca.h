@@ -29,6 +29,7 @@ typedef struct eigenpairs{
     double* eigenvalues;
 }eigenpairs;
 
+void showmat(matrix* mat,char d);
 /*
 Returns 1 for triangular matrices
 */
@@ -42,6 +43,7 @@ eigenpairs* qr_eigenpairs_square(matrix* mat);
 typedef struct SVD{
     matrix* U;
     matrix* S;
+    unsigned int len;
     matrix* VT;
 }SVD;
 
@@ -49,4 +51,9 @@ typedef struct SVD{
 Performs a naïve SVD
 */
 SVD* qr_svd(matrix* mat);
+
+/*
+Reconstructs a matrix using the first n singular values
+*/
+matrix* reconstruct_from_n_values(SVD* svd,unsigned int n);
 #endif

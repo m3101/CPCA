@@ -1,6 +1,8 @@
 #ifndef LINAL_H
 #define LINAL_H
-#define ZERO 0.00000000000001
+#ifndef ZERO
+#define ZERO 0.000000000001
+#endif
 /*
 A simple collection of linear algebra functions
 Copyright (c) 2020 Amélia O. F. da S.

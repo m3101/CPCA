@@ -1,7 +1,7 @@
 help:
 	@echo "Usage:"
 	@echo "make lib		Downloads the required libraries"
-	@echo "make tests		Builds the test program (requires a 32bit ARGB file named satie.bmp at the project root (preferrably a picture of Erik Satie))"
+	@echo "make tests		Builds the test program (requires a (SMALL. This is a very, very inefficient implementation) 32bit ARGB file named satie.bmp at the project root (preferrably a picture of Erik Satie))"
 	@echo "make builds		Builds a shared library"
 lib:
 	@mkdir lib
@@ -16,8 +16,9 @@ tests:
 	@make lib
 	@if [ -d build ]; then rm -rf build;fi
 	@mkdir build
-	gcc -L./lib/ src/cpca.c src/linal.c test/gauss.c test/gfx.c -lX11 -lm -lbmpreader -o build/gauss -Wall -Werror -g
-	gcc -L./lib/ src/cpca.c src/linal.c test/singval.c test/gfx.c -lX11 -lm -lbmpreader -o build/svd -Wall -Werror -g
+	gcc -L./lib -Wl,-rpath=./lib src/cpca.c src/linal.c test/gauss.c test/gfx.c -lX11 -lm -lbmpreader -o build/gauss -Wall -Werror -g
+	gcc -L./lib -Wl,-rpath=./lib src/cpca.c src/linal.c test/singval.c test/gfx.c -lX11 -lm -lbmpreader -o build/svd -Wall -Werror -g
+	gcc -L./lib -Wl,-rpath=./lib src/cpca.c src/linal.c test/image.c test/gfx.c -lX11 -lm -lbmpreader -o build/img -Wall -Werror -g -DZERO=0.1
 builds:
 	@make lib
 	@if [ -d build ]; then rm -rf build;fi

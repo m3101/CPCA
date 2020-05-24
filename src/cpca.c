@@ -3,6 +3,48 @@
 #include <stdio.h>
 #include "linal.h"
 #include "cpca.h"
+
+#include "../test/gfx.h"
+void showmat(matrix* mat,char d)
+{
+    if(!mat)return;
+    double min=__DBL_MAX__,max=__DBL_MIN__,map,col;
+    unsigned int x,y,nx,ny;
+    unsigned long int h;
+    unsigned char c;
+    for(y=0;y<mat->h;y++)
+    {
+        h=y*mat->w;
+        for(x=0;x<mat->w;x++)
+        {
+            col=mat->data[h+x];
+            min=col<min?col:min;
+            max=col>max?col:max;
+        }
+    }
+    if(d)printf("(min,max)=(%.2lf,%.2lf)\n",min,max);
+    if(max==min)return;
+    for(y=0;y<mat->h;y++)
+    {
+        h=y*mat->w;
+        for(x=0;x<mat->w;x++)
+        {
+            col=mat->data[h+x];
+            map=(col-min)/(max-min);
+            if(map<0||map>1)printf("WTF\n");
+            c=(unsigned char)(map*255);
+            gfx_color(c,c,c);
+            for(nx=0;nx<4;nx++)
+            {
+                for(ny=0;ny<4;ny++)
+                {
+                    gfx_point(4*x+nx,4*y+ny);
+                }
+            }
+        }
+    }
+}
+
 /*
 A naïve SVD implementation for PCA in BMP images
 Copyright (c) 2020 Amélia O. F. da S.
@@ -47,20 +89,21 @@ eigenpairs* qr_eigenpairs_square(matrix* mat)
     if(!mat||mat->h!=mat->w)return NULL;
     eigenpairs* ret=malloc(sizeof(eigenpairs));
     ret->eigenvalues=malloc(sizeof(double)*mat->w);
+    printf("\tPerforming QR decomposition...\n");
     qr_decomp* QR=qr_decompose(mat);
-    printf("IN QR:\n");
-    printf("Q:\n");
-    printmat(QR->Q);
-    printf("R:\n");
-    printmat(QR->R);
     matrix* RQ=multiply(QR->R,QR->Q);
     matrix* Q=Matrix(QR->Q->w,QR->Q->h,QR->Q->data),*tmp;
-    unsigned long int i;
+    unsigned long int i=0;
+    printf("\tIterating until it's triangular...\n");
     while(!istriangular(RQ))
     {
+        fflush(stdout);
         freeMatrix(&QR->R);
         freeMatrix(&QR->Q);
         free(QR);
+        showmat(RQ,0);
+        printf("\t\t(Internal QR decomposition)(%lu)\r",i++);
+        fflush(stdout);
         QR=qr_decompose(RQ);
         freeMatrix(&RQ);
         tmp=multiply(Q,QR->Q);
@@ -68,13 +111,13 @@ eigenpairs* qr_eigenpairs_square(matrix* mat)
         Q=tmp;
         RQ=multiply(QR->R,QR->Q);
     }
+    printf("\nFinished QR eigenpair algorithm.\n");
     ret->eigenvectors=Q;
     for(i=0;i<mat->w;i++)
         ret->eigenvalues[i]=RQ->data[i+i*mat->w];
     freeMatrix(&QR->Q);
     free(QR);
     freeMatrix(&RQ);
-    printf("RETURNING FROM QR\n");
     return ret;
 }
 
@@ -92,17 +135,16 @@ SVD* qr_svd(matrix* mat)
 {
     SVD* ret=NULL;
     if(!mat)return NULL;
-    printf("IN SVD\n");
     ret=malloc(sizeof(SVD));
     unsigned long int non_null,i;
+    printf("Generating square matrix...\n");
     matrix *trans=transposed(mat),*sq=multiply(trans,mat);
-    printf("MtM:\n");
-    printmat(sq);
+    showmat(sq,0);
+    gfx_wait();
+    printf("Calculating eigenpairs...\n");
     eigenpairs* eigen=qr_eigenpairs_square(sq);
     non_null=0;
     for(non_null=0;non_null<sq->w;non_null++)if(eigen->eigenvalues[non_null]<=ZERO)break;
-    printf("Eigenvectors (%lu):\n",non_null);
-    printmat(eigen->eigenvectors);
     ret->VT=transposed_cut(eigen->eigenvectors,non_null);
     ret->U=Matrix(non_null,mat->h,NULL);
     /*For each eigenvalue*/
@@ -116,12 +158,29 @@ SVD* qr_svd(matrix* mat)
         }
     }
     ret->S=square_from_vect(eigen->eigenvalues,non_null);
-    printf("U:\n");
-    printmat(ret->U);
-    printf("S:\n");
-    printmat(ret->S);
-    printf("Vt:\n");
-    printmat(ret->VT);
-    printf("RETURNING FROM SVD\n");
+    ret->len=non_null;
+    return ret;
+}
+
+matrix* reconstruct_from_n_values(SVD* svd,unsigned int n)
+{
+    if(!svd||n==0)return NULL;
+    matrix* ret=Matrix(svd->VT->w,svd->U->h,NULL);
+    unsigned int i,j,j2;
+    unsigned long int hj,hj2,hr,eigen;
+    for(i=0;i<n;i++)
+    {
+        eigen=svd->S->w*i+i;
+        for(j=0;j<svd->U->h;j++)
+        {
+            hj=svd->U->w*j;
+            hr=svd->VT->w*j;
+            for(j2=0;j2<svd->VT->w;j2++)
+            {
+                hj2=svd->VT->w*i;
+                ret->data[hr+j2]+=svd->S->data[eigen]*svd->U->data[hj+i]*svd->VT->data[hj2+j2];
+            }
+        }
+    }
     return ret;
 }
